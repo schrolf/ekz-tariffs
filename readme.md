@@ -137,6 +137,7 @@ This integration provides multiple sensors to help you monitor and optimize your
 - **Unit**: CHF/kWh
 - **Description**: Shows the current electricity price
 - **Attributes**:
+  - `future`: future slots as a list of `{start, end, price_chf_per_kwh}` entries covering today and (if published) tomorrow (as published by EKZ, typically by 18:00 for the next day)
   - `schedule`: Full slot schedule as a list of `{start, end, price_chf_per_kwh}` entries covering today and tomorrow (as published by EKZ, typically by 18:00 for the next day)
   - `schedule_date`: Date of the current schedule
   - `next_change`: Timestamp when the price will next change
@@ -149,6 +150,7 @@ This integration provides multiple sensors to help you monitor and optimize your
 - **Unit**: CHF/kWh
 - **Description**: Shows the current feed-in price (Einspeisevergütung) per 15-minute slot
 - **Attributes**:
+  - `future`: future slots as a list of `{start, end, feed_in_chf_per_kwh}` entries covering today and (if published) tomorrow (as published by EKZ, typically by 18:00 for the next day)
   - `schedule`: Full slot schedule as a list of `{start, end, feed_in_chf_per_kwh}` entries covering today and tomorrow (as published by EKZ, typically by 18:00 for the next day)
   - `schedule_date`: Date of the current schedule
   - `next_change`: Timestamp when the feed-in price will next change

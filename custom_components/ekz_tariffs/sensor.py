@@ -38,6 +38,10 @@ def _find_current_slot(slots: list[FusedEvent], now: dt.datetime) -> FusedEvent 
     return None
 
 
+def _find_future_slots(slots: list[FusedEvent], now: dt.datetime) -> list[FusedEvent]:
+    return [s for s in slots if now < s.start]
+
+
 def _find_next_boundary(
     slots: list[FusedEvent], now: dt.datetime
 ) -> dt.datetime | None:
@@ -129,6 +133,7 @@ class EkzCurrentPriceSensor(SensorEntity):
         now = dt_util.now()
 
         fused_slots = fuse_slots(slots)
+        future_slots = _find_future_slots(fused_slots, now)
         cur = _find_current_slot(fused_slots, now)
         next_boundary = _find_next_boundary(fused_slots, now)
 
@@ -142,6 +147,14 @@ class EkzCurrentPriceSensor(SensorEntity):
                     "price_chf_per_kwh": round(s.price_chf_per_kwh, 6),
                 }
                 for s in slots
+            ],
+            "future": [
+                {
+                    "start": s.start.isoformat(),
+                    "end": s.end.isoformat(),
+                    "price_chf_per_kwh": round(s.price, 6),
+                }
+                for s in future_slots
             ],
         }
 
@@ -209,6 +222,8 @@ class EkzFeedInPriceSensor(EkzCurrentPriceSensor):
     def extra_state_attributes(self) -> dict[str, Any]:
         now = dt_util.now()
         feed_slots = self._feed_in_slots()
+        fused_slots = fuse_slots(feed_slots)
+        future_slots = _find_future_slots(fused_slots, now)
 
         cur = None
         for slot in feed_slots:
@@ -227,6 +242,14 @@ class EkzFeedInPriceSensor(EkzCurrentPriceSensor):
                     "feed_in_chf_per_kwh": round(s.feed_in_chf_per_kwh, 6),
                 }
                 for s in feed_slots
+            ],
+            "future": [
+                {
+                    "start": s.start.isoformat(),
+                    "end": s.end.isoformat(),
+                    "feed_in_chf_per_kwh": round(s.price, 6),
+                }
+                for s in future_slots
             ],
         }
 
