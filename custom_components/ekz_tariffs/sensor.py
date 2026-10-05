@@ -138,16 +138,11 @@ class EkzCurrentPriceSensor(SensorEntity):
         next_boundary = _find_next_boundary(fused_slots, now)
 
         attrs: dict[str, Any] = {
+            "tariff_name": self._tariff_name,
             "schedule_date": dt_util.as_local(now).date().isoformat(),
+            "slot_start": cur.start.isoformat() if cur else None,
+            "slot_end": cur.end.isoformat() if cur else None,
             "next_change": next_boundary.isoformat() if next_boundary else None,
-            "schedule": [
-                {
-                    "start": s.start.isoformat(),
-                    "end": s.end.isoformat(),
-                    "price_chf_per_kwh": round(s.price_chf_per_kwh, 6),
-                }
-                for s in slots
-            ],
             "future": [
                 {
                     "start": s.start.isoformat(),
@@ -157,17 +152,6 @@ class EkzCurrentPriceSensor(SensorEntity):
                 for s in future_slots
             ],
         }
-
-        if self._tariff_name:
-            attrs["tariff_name"] = self._tariff_name
-
-        if cur:
-            attrs.update(
-                {
-                    "slot_start": cur.start.isoformat(),
-                    "slot_end": cur.end.isoformat(),
-                }
-            )
 
         return attrs
 
@@ -220,29 +204,20 @@ class EkzFeedInPriceSensor(EkzCurrentPriceSensor):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
+        slots: list[TariffSlot] = self._coordinator.data or []
         now = dt_util.now()
-        feed_slots = self._feed_in_slots()
-        fused_slots = fuse_slots(feed_slots)
+
+        fused_slots = fuse_slots(slots)
         future_slots = _find_future_slots(fused_slots, now)
-
-        cur = None
-        for slot in feed_slots:
-            if slot.start <= now < slot.end:
-                cur = slot
-                break
-
+        cur = _find_current_slot(fused_slots, now)
         next_boundary = self._next_feed_in_boundary(now)
+
         attrs: dict[str, Any] = {
+            "tariff_name": self._tariff_name,
             "schedule_date": dt_util.as_local(now).date().isoformat(),
+            "slot_start": cur.start.isoformat() if cur else None,
+            "slot_end": cur.end.isoformat() if cur else None,
             "next_change": next_boundary.isoformat() if next_boundary else None,
-            "schedule": [
-                {
-                    "start": s.start.isoformat(),
-                    "end": s.end.isoformat(),
-                    "feed_in_chf_per_kwh": round(s.feed_in_chf_per_kwh, 6),
-                }
-                for s in feed_slots
-            ],
             "future": [
                 {
                     "start": s.start.isoformat(),
@@ -252,13 +227,6 @@ class EkzFeedInPriceSensor(EkzCurrentPriceSensor):
                 for s in future_slots
             ],
         }
-
-        if self._tariff_name:
-            attrs["tariff_name"] = self._tariff_name
-
-        if cur:
-            attrs["slot_start"] = cur.start.isoformat()
-            attrs["slot_end"] = cur.end.isoformat()
 
         return attrs
 
